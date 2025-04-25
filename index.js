@@ -1,12 +1,21 @@
 /* import the required modules */
-const express = require('express');
-const dotenv = require('dotenv');
+import express from 'express';
+import { config } from 'dotenv';
+import ConnectDb from './connections/MongoDbconnection.js';
+import {multiverseTextPort} from './controllers/universalTextController.js';
 
 /* create app server */
 const app = express();
 
 /* configure env */
-dotenv.config();
+config();
+
+/* connect to the db */
+const mongoUrl = process.env.MONGO_URL;
+
+ConnectDb(mongoUrl);
+
+multiverseTextPort();
 
 /* default router location */
 app.get('/',(req,res)=>{
