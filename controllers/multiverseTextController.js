@@ -1,111 +1,48 @@
 // const multiverseServerCode = require('./')
 import { customAlphabet } from 'nanoid';
-import { writeFile, readFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 import multiverseUniversalTextModel from '../models/multiverseUniversalTextModel.js'
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const filePath = join(__dirname, '../multiverseUniversalCode.json');
+const allMultiverseCodeData = {};
+
+
+const getAllMultiverseCodeWhenServerStart = async ()=>{
+    try {
+        const allCodeData = await multiverseUniversalTextModel.find({}, { multiverseCode: 1, _id: 0 });
+        
+        if(!allCodeData){
+            return;
+        }
+        allCodeData.forEach((data)=>{
+            allMultiverseCodeData[data.multiverseCode] = true;
+        })
+        
+    } catch (error) {
+        console.log('Error while get server multiverse Universal code ');
+    }
+}
+
+getAllMultiverseCodeWhenServerStart();
 
 
 const generateRandomMultiverseCode = async (len) => {
     try {
-        // Check if file exists
-        if (!existsSync(filePath)) {
-            console.log('File not found, creating a new one...');
-            await writeFile(filePath, JSON.stringify({}, null, 2), 'utf-8');
-
-            // write code to  delete the data from universal text data
-            const delete_response = await multiverseUniversalTextModel.deleteMany({});
-
-            if(!delete_response){
-                console.log('db data not deleted major bug');
-                return 'server error';
-            }
-            console.log('db all data delete successfully')
-        }
-
-        // get the multiverse data 
-        let multiverseServerCodefile = await readFile(filePath, 'utf-8');
-
-        
-        // If file is empty or only spaces, reset it to '{}'
-        if (!multiverseServerCodefile.trim()) {
-            console.log('Empty file found, writing {} into it...');
-            await writeFile(filePath, JSON.stringify({}, null, 2), 'utf-8');
-            multiverseServerCodefile = '{}';  
-        }
-
-        const multiverseServerData = JSON.parse(multiverseServerCodefile);
-        
-
-        // generate the multiverse code 
-        const generateCode = customAlphabet('1234567890', len);
-        
-        // generate 6 digit multiverse code but if lyb fail then try with manual
-        const generateMultiverseCodeCode = ()=>{
-            const  multiverseCode = generateCode();
-            
-            if (multiverseCode.length === len) {
-                return multiverseCode;
-            }
-            
-            console.log('nano id not able to generate the 6 digit code -> try to manually generate');
-            let multiversecodeLen = 1;
-            let multiversecodeLenEnd = 9;
-            for (let i = 1; i < len; i++) {
-                multiversecodeLen *= 10;
-                multiversecodeLenEnd *= 10;
-            }
-            return Math.floor(multiversecodeLen + Math.random() * multiversecodeLenEnd).toString();
+        // generate the multiverse code
+        const generateCode = customAlphabet('1234567890',len)
+        const multiverseCode = generateCode();
+        if(!allMultiverseCodeData[multiverseCode]){
+            allMultiverseCodeData[multiverseCode]=true;
+            return multiverseCode;
         }
         
-        let code = generateMultiverseCodeCode();
-        
-        // give another chance to make 6 digit code
-        if(code.length!==len){
-            code = generateMultiverseCodeCode();
-        }
-        
-        if(code.length!==len){
-            return 'server error';
-        }
-        
-        // if nanoid not able to generate the code then default code work
-        
-        
-        if (multiverseServerData[code]) {
-            for (let i = 1; i < 10_001; i++) {
-                const regenerate_code = generateMultiverseCodeCode();
-                
-                if(regenerate_code.length!==len){
-                    console.log('length not matched')
-                    return 'server error';
-                }
-                
-                console.log(`regenerate code : ${regenerate_code}`);
-                if (!multiverseServerData[regenerate_code]) {
-                    console.log(`unique regenerate code found : ${regenerate_code}`);
-                    code = regenerate_code;
-                    break;
-                }
-                
-                if (i === 10_000) {
-                    console.log('no new code found');
-                    return 'server error';
-                }
+        for(let i=1;i<10_000;i++){
+            const regenerateMultiverseCode = generateCode();
+            if(!allMultiverseCodeData[regenerateMultiverseCode]){
+                allMultiverseCodeData[multiverseCode]=true;
+                return regenerateMultiverseCode;
             }
         }
 
-        const data = {
-            ...multiverseServerData, [code]: true
-        }
-
-        await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8'); 
-
-        return code;
+        return 'server error'
 
     } catch (error) {
         console.log('Error while generate the multiverse code', error)
@@ -140,9 +77,8 @@ const universalTextSave = async (req, res) => {
             console.log('error while insert data in db');
             return res.status(500).json({msg:'Internal server error',responseStatus:'failed'});
         }
-        
 
-
+        console.log('Data ',allMultiverseCodeData);
         res.status(200).json({ code: getMultiverseNewCode , yourTextData : textData , responseStatus:'success' })
 
     } catch (error) {
