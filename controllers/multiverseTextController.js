@@ -1,32 +1,33 @@
 // const multiverseServerCode = require('./')
+import cron from 'node-cron';
 import { customAlphabet } from 'nanoid';
 import multiverseUniversalTextModel from '../models/multiverseUniversalTextModel.js'
 
-const allMultiverseCodeData = {};
+let allMultiverseCodeData = {};
 
-
+// fetch all multiverse code from db and push in the obj variable
 const getAllMultiverseCodeWhenServerStart = async ()=>{
     try {
         const allCodeData = await multiverseUniversalTextModel.find({}, { multiverseCode: 1, _id: 0 });
         
         if(!allCodeData){
+            console.log('multiverse code empty in db while fetch data');
             return;
         }
         allCodeData.forEach((data)=>{
             allMultiverseCodeData[data.multiverseCode] = true;
         })
-        
+
+        console.log('status 200 fetch : getAllMultiverseCodeWhenServerStart');
+
     } catch (error) {
         console.log('Error while get server multiverse Universal code ');
     }
 }
 
-getAllMultiverseCodeWhenServerStart();
-
-
+// Generate the new multiverse code for users
 const generateRandomMultiverseCode = async (len) => {
     try {
-        // generate the multiverse code
         const generateCode = customAlphabet('1234567890',len)
         const multiverseCode = generateCode();
         if(!allMultiverseCodeData[multiverseCode]){
@@ -34,6 +35,7 @@ const generateRandomMultiverseCode = async (len) => {
             return multiverseCode;
         }
         
+        // if duplicate found then try 10k time to find unique code 
         for(let i=1;i<10_000;i++){
             const regenerateMultiverseCode = generateCode();
             if(!allMultiverseCodeData[regenerateMultiverseCode]){
@@ -50,7 +52,35 @@ const generateRandomMultiverseCode = async (len) => {
     }
 }
 
+// Schedule to delete all multiverse code data from universal port db and allMultiverseCodeData
+const deleteUniversalTextDataAfterOneDay = async ()=>{
+    try {
+        cron.schedule('1 0 * * *',async ()=>{
+            // delete data from db
+            const deleteMsg = await multiverseUniversalTextModel.deleteMany({});
 
+            if(deleteMsg){
+                console.log('Schedule run universal text data delete from db ',deleteMsg);
+            }else{
+                console.log('Schedule run error while delete universal text data');
+            }
+            
+            // delete data from server file
+            try {
+                allMultiverseCodeData = {};
+                console.log('Schedule run universal text data delete from server storage');
+            } catch (error) {
+                console.log('Schedule run error while delete universal server file : ' ,error);
+            }
+
+        });
+
+    } catch (error) {
+        console.log('Error while delete universal data after one day');
+    }
+}
+
+// * API endpoint to save user text in universal port and give a unique multiverse code
 const universalTextSave = async (req, res) => {
     try {
         const { textData } = req.body;
@@ -78,7 +108,6 @@ const universalTextSave = async (req, res) => {
             return res.status(500).json({msg:'Internal server error',responseStatus:'failed'});
         }
 
-        console.log('Data ',allMultiverseCodeData);
         res.status(200).json({ code: getMultiverseNewCode , yourTextData : textData , responseStatus:'success' })
 
     } catch (error) {
@@ -87,6 +116,7 @@ const universalTextSave = async (req, res) => {
     }
 }
 
+// * API endpoint to fetch the text from universal port using multiverse code .
 const getUniversalTextData = async (req,res)=>{
     try {
         const {multiverseCode} = req.query;
@@ -115,4 +145,5 @@ const getUniversalTextData = async (req,res)=>{
     }
 }
 
+export {getAllMultiverseCodeWhenServerStart , deleteUniversalTextDataAfterOneDay};
 export { universalTextSave , getUniversalTextData};
