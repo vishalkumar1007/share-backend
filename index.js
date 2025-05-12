@@ -4,6 +4,7 @@ import cors from 'cors';
 import { config } from 'dotenv';
 import ConnectDb from './connections/MongoDbconnection.js';
 import TextMultiverseRoute from './routers/TextMultiverseRoute.js';
+import userRouter from './routers/userRouter.js';
 import {getAllMultiverseCodeWhenServerStart , deleteUniversalTextDataAfterOneDay} from './controllers/multiverseTextController.js';
 
 /* create app server */
@@ -48,6 +49,7 @@ ConnectDb(mongoUrl);
 
 /* Api Endpoint */
 app.use('/api/TextMultiverse',TextMultiverseRoute);
+app.use('/api/user',userRouter);
 
 
 /* default router location */

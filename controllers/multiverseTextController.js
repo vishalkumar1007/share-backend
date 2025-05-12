@@ -1,20 +1,22 @@
 // const multiverseServerCode = require('./')
 import cron from 'node-cron';
 import { customAlphabet } from 'nanoid';
-import multiverseUniversalTextModel from '../models/multiverseUniversalTextModel.js'
+import multiverseUniversalTextModel from '../models/multiverseUniversalTextModel.js';
+import userModel from '../models/userModel.js';
+import jwt from 'jsonwebtoken';
 
 let allMultiverseCodeData = {};
 
 // fetch all multiverse code from db and push in the obj variable
-const getAllMultiverseCodeWhenServerStart = async ()=>{
+const getAllMultiverseCodeWhenServerStart = async () => {
     try {
         const allCodeData = await multiverseUniversalTextModel.find({}, { multiverseCode: 1, _id: 0 });
-        
-        if(!allCodeData){
+
+        if (!allCodeData) {
             console.log('multiverse code empty in db while fetch data');
             return;
         }
-        allCodeData.forEach((data)=>{
+        allCodeData.forEach((data) => {
             allMultiverseCodeData[data.multiverseCode] = true;
         })
 
@@ -28,18 +30,18 @@ const getAllMultiverseCodeWhenServerStart = async ()=>{
 // Generate the new multiverse code for users
 const generateRandomMultiverseCode = async (len) => {
     try {
-        const generateCode = customAlphabet('1234567890',len)
+        const generateCode = customAlphabet('1234567890', len)
         const multiverseCode = generateCode();
-        if(!allMultiverseCodeData[multiverseCode]){
-            allMultiverseCodeData[multiverseCode]=true;
+        if (!allMultiverseCodeData[multiverseCode]) {
+            allMultiverseCodeData[multiverseCode] = true;
             return multiverseCode;
         }
-        
+
         // if duplicate found then try 10k time to find unique code 
-        for(let i=1;i<10_000;i++){
+        for (let i = 1; i < 10_000; i++) {
             const regenerateMultiverseCode = generateCode();
-            if(!allMultiverseCodeData[regenerateMultiverseCode]){
-                allMultiverseCodeData[multiverseCode]=true;
+            if (!allMultiverseCodeData[regenerateMultiverseCode]) {
+                allMultiverseCodeData[multiverseCode] = true;
                 return regenerateMultiverseCode;
             }
         }
@@ -53,24 +55,24 @@ const generateRandomMultiverseCode = async (len) => {
 }
 
 // Schedule to delete all multiverse code data from universal port db and allMultiverseCodeData
-const deleteUniversalTextDataAfterOneDay = async ()=>{
+const deleteUniversalTextDataAfterOneDay = async () => {
     try {
-        cron.schedule('1 0 * * *',async ()=>{
+        cron.schedule('1 0 * * *', async () => {
             // delete data from db
             const deleteMsg = await multiverseUniversalTextModel.deleteMany({});
 
-            if(deleteMsg){
-                console.log('Schedule run universal text data delete from db ',deleteMsg);
-            }else{
+            if (deleteMsg) {
+                console.log('Schedule run universal text data delete from db ', deleteMsg);
+            } else {
                 console.log('Schedule run error while delete universal text data');
             }
-            
+
             // delete data from server file
             try {
                 allMultiverseCodeData = {};
                 console.log('Schedule run universal text data delete from server storage');
             } catch (error) {
-                console.log('Schedule run error while delete universal server file : ' ,error);
+                console.log('Schedule run error while delete universal server file : ', error);
             }
 
         });
@@ -84,66 +86,103 @@ const deleteUniversalTextDataAfterOneDay = async ()=>{
 const universalTextSave = async (req, res) => {
     try {
         const { textData } = req.body;
+        const token = req.headers.authorization?.split(' ')[1];
 
         if (!textData) {
-            console.log('text data required 401');
-            return res.status(401).json({ msg: 'text data require', responseStatus: 'failed' });
+            return res.status(401).json({ msg: 'text data required', responseStatus: 'failed' });
         }
 
         const getMultiverseNewCode = await generateRandomMultiverseCode(6);
-        
         if (getMultiverseNewCode === 'server error') {
-            return res.status(500).json({ msg: 'Internal server error while multiverse code generate', code: getMultiverseNewCode })
+            return res.status(500).json({ msg: 'error generating code' });
         }
-
 
         const newData = {
-            multiverseCode:getMultiverseNewCode,
-            codeMappedText:textData
-        }
+            multiverseCode: getMultiverseNewCode,
+            codeMappedText: textData
+        };
+
         const insertDataToDb = await multiverseUniversalTextModel.create(newData);
-
-        if(!insertDataToDb){
-            console.log('error while insert data in db');
-            return res.status(500).json({msg:'Internal server error',responseStatus:'failed'});
+        if (!insertDataToDb) {
+            return res.status(500).json({ msg: 'DB insert error', responseStatus: 'failed' });
         }
 
-        res.status(200).json({ code: getMultiverseNewCode , yourTextData : textData , responseStatus:'success' })
+        let tokenVerification = 'unavailable';
+        let textShareHistorySaveStatus = 'unavailable';
 
+        // verify token function
+        function verifyTokenAsync(token, secret) {
+            return new Promise((resolve, reject) => {
+                jwt.verify(token, secret, (err, decoded) => {
+                    if (err) return reject(err);
+                    resolve(decoded);
+                });
+            });
+        }
+
+        if (token) {
+            try {
+                const decoded = await verifyTokenAsync(token, process.env.TOKEN_SECRET_KEY);
+                tokenVerification = 'success';
+
+                const userEmailId = decoded.email;
+                const saveResult = await userModel.updateOne(
+                    { email: userEmailId },
+                    { $push: { "activityHistory.textMultiverseData": newData } }
+                );
+
+                if (saveResult.modifiedCount > 0) {
+                    textShareHistorySaveStatus = 'success';
+                } else {
+                    textShareHistorySaveStatus = 'failed';
+                }
+            } catch (err) {
+                tokenVerification = 'failed';
+                textShareHistorySaveStatus = 'failed';
+            }
+        }
+
+        return res.status(200).json({
+            code: getMultiverseNewCode,
+            yourTextData: textData,
+            responseStatus: 'success',
+            tokenVerification,
+            textShareHistorySaveStatus
+        });
     } catch (error) {
-        res.status(500).json({ msg: 'internal server error', responseStatus: 'failed' })
-        console.log('Error while save the text data in db')
+        console.log('Error while save the text data in db', error)
+        return res.status(500).json({ msg: 'internal server error', responseStatus: 'failed' })
     }
 }
 
 // * API endpoint to fetch the text from universal port using multiverse code .
-const getUniversalTextData = async (req,res)=>{
+const getUniversalTextData = async (req, res) => {
     try {
-        const {multiverseCode} = req.query;
+        const { multiverseCode } = req.query;
 
-        if(!multiverseCode){
-            return res.status(401).json({msg:'multiverse code require',responseStatus:'failed'})
+        if (!multiverseCode) {
+            return res.status(401).json({ msg: 'multiverse code require', responseStatus: 'failed' })
         }
-        
-        if(multiverseCode.length!=6){
-            return res.status(401).json({msg:'Invalid multiverse code',responseStatus:'failed'})
-        }        
-        
-        const multiverseTextData = await multiverseUniversalTextModel.findOne({multiverseCode})
-        
-        
-        if(!multiverseTextData){
+
+        if (multiverseCode.length != 6) {
+            return res.status(401).json({ msg: 'Invalid multiverse code', responseStatus: 'failed' })
+        }
+
+        const multiverseTextData = await multiverseUniversalTextModel.findOne({ multiverseCode })
+
+
+        if (!multiverseTextData) {
             console.log('code not found in db multiverse code base')
-            return res.status(404).json({msg:`Invalid multiverse Code ${multiverseCode}`,responseStatus:'failed'})
+            return res.status(404).json({ msg: `Invalid multiverse Code ${multiverseCode}`, responseStatus: 'failed' })
         }
-        
-        res.status(200).json({code:multiverseCode ,responseStatus:'success', codeMappedText:multiverseTextData.codeMappedText})
+
+        res.status(200).json({ code: multiverseCode, responseStatus: 'success', codeMappedText: multiverseTextData.codeMappedText })
 
     } catch (error) {
         console.log('Internal server error in getUniversalTextData ', error)
-        return res.status(500).json({msg:'Internal server error',responseStatus:'failed'})
+        return res.status(500).json({ msg: 'Internal server error', responseStatus: 'failed' })
     }
 }
 
-export {getAllMultiverseCodeWhenServerStart , deleteUniversalTextDataAfterOneDay};
-export { universalTextSave , getUniversalTextData};
+export { getAllMultiverseCodeWhenServerStart, deleteUniversalTextDataAfterOneDay };
+export { universalTextSave, getUniversalTextData };

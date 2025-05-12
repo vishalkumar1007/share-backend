@@ -1,3 +1,4 @@
 /node_modules
 /.env
-/controllers/multiverseTextControllerWithFile.js
+/events/multiverseTextControllerWithFile.js
+/events/deleteUniversalTextDataAfterOneDay.js

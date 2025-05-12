@@ -1,16 +1,16 @@
 import mongoose from "mongoose";
 
 const multiverseUniversalTextSchema = new mongoose.Schema({
-    multiverseCode :{
-        type:Number,
-        require:true,
-        unique:true
+    multiverseCode: {
+        type: Number,
+        required: true,
+        unique: true
     },
-    codeMappedText:{
-        type:String,
-        require:true
+    codeMappedText: {
+        type: String,
+        required: true
     }
-},{timestamps:true});
+}, { timestamps: true });
 
-const multiverseUniversalTextModel = mongoose.model('multiverseUniversalText',multiverseUniversalTextSchema)
+const multiverseUniversalTextModel = mongoose.model('multiverseUniversalText', multiverseUniversalTextSchema);
 export default multiverseUniversalTextModel;
