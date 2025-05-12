@@ -106,7 +106,7 @@ const userTokenValidation = (req,res)=>{
         return res.status(200).json({msg:'token verification successful' , responseStatus:'success' , decode:decoded})
 
     } catch (error) {
-        console.log('Error while validate the user token')
+        console.log('Error while validate the user token', error)
         return res.status(500).json({ msg: 'Internal server error', responseStatus: 'failed' });
     }
 }
