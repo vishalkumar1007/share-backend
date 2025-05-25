@@ -7,7 +7,8 @@ const userRouter = express.Router();
 
 userRouter.post('/signup',multiverseCustomPortRateLimit,userSignUpController);
 userRouter.get('/login',multiverseCustomPortRateLimit,userLoginController);
-userRouter.get('/verifyUserAuthToken',multiverseCustomPortRateLimit,userTokenValidation);
 userRouter.get('/getUserProfileData',multiverseCustomPortRateLimit,verifyUserTokenMiddleware,getUserDataController);
 
+// without limit
+userRouter.get('/verifyUserAuthToken',userTokenValidation);
 export default userRouter;
