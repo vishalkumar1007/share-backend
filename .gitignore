@@ -2,3 +2,4 @@
 /.env
 /events/multiverseTextControllerWithFile.js
 /events/deleteUniversalTextDataAfterOneDay.js
+pvrVercel.json
