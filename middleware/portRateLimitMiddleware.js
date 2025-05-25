@@ -33,7 +33,7 @@ const multiverseCustomPortRateLimit = (req,res,next)=>{
 
     } catch (error) {
         console.log('Internal server error in multiversePortRateLimit');
-        res.status(500).json({msg:'internal server error , api rate limit' , responseStatus:'failed'});
+        return res.status(500).json({msg:'internal server error , api rate limit' , responseStatus:'failed'});
     }
 }
 

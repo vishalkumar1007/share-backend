@@ -1,11 +1,13 @@
 import express from "express";
-import {userSignUpController,userLoginController,userTokenValidation} from "../controllers/userController.js"
-
+import {userSignUpController,userLoginController,userTokenValidation,getUserDataController} from "../controllers/userController.js"
+import {verifyUserTokenMiddleware} from '../middleware/verifyUserTokenMiddleware.js';
+import { multiverseCustomPortRateLimit } from "../middleware/portRateLimitMiddleware.js";
 
 const userRouter = express.Router();
 
-userRouter.post('/signup',userSignUpController);
-userRouter.get('/login',userLoginController);
-userRouter.get('/verifyUserAuthToken',userTokenValidation);
+userRouter.post('/signup',multiverseCustomPortRateLimit,userSignUpController);
+userRouter.get('/login',multiverseCustomPortRateLimit,userLoginController);
+userRouter.get('/verifyUserAuthToken',multiverseCustomPortRateLimit,userTokenValidation);
+userRouter.get('/getUserProfileData',multiverseCustomPortRateLimit,verifyUserTokenMiddleware,getUserDataController);
 
 export default userRouter;

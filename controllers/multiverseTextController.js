@@ -82,7 +82,7 @@ const deleteUniversalTextDataAfterOneDay = async () => {
     }
 }
 
-// * API endpoint to save user text in universal port and give a unique multiverse code
+// API endpoint to save user text in universal port and give a unique multiverse code || also if api came with token then save the new data in user history history
 const universalTextSave = async (req, res) => {
     try {
         const { textData } = req.body;

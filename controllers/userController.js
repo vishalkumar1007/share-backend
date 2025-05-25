@@ -19,7 +19,7 @@ const userSignUpController = async (req, res) => {
         }
 
         const userPayloadData = {
-            firstName,  
+            firstName,
             lastName,
             email,
             password
@@ -81,7 +81,7 @@ const userLoginController = async (req, res) => {
         const tokenSecret = process.env.TOKEN_SECRET_KEY;
         const token = jwt.sign(tokenPayload, tokenSecret, { expiresIn: '31d' })
 
-        return res.status(200).json({ msg: 'User login successfully', accessToken: token, payloadData: tokenPayload, responseStatus: 'failed' });
+        return res.status(200).json({ msg: 'User login successfully', accessToken: token, payloadData: tokenPayload, responseStatus: 'success' });
 
     } catch (error) {
         console.log('Error while sign up user ', error);
@@ -89,25 +89,46 @@ const userLoginController = async (req, res) => {
     }
 }
 
+const getUserDataController = async (req, res) => {
+    try {
+        const { email } = req.userData;
 
-const userTokenValidation = (req,res)=>{
+        if (!email) {
+            return res.status(422).json({ msg: 'credentials required ', responseStatus: 'failed' })
+        }
+
+        const userData = await userModel.findOne({ email });
+
+        if (!userData) {
+            return res.status(404).json({ msg: 'User Not Found', responseStatus: 'failed' });
+        }
+
+        return res.status(200).json({ msg: 'user filtered profile data', responseStatus: 'success',data: { email: userData.email, firstName:userData.firstName , lastName:userData.lastName , userData: userData.activityHistory } });
+    } catch (error) {
+        console.log('Error while sign up user ', error);
+        return res.status(500).json({ msg: 'Internal server error', responseStatus: 'failed' });
+    }
+}
+
+const userTokenValidation = (req, res) => {
     try {
         console.log(req.headers.authorization);
         const token = req.headers.authorization?.split(' ')[1];
 
-        if(!token){
-            return res.status(422).json({msg:'auth token required',responseStatus:'failed'});
+        if (!token) {
+            return res.status(422).json({ msg: 'auth token required', responseStatus: 'failed' });
         }
 
-        const decoded = jwt.verify(token , process.env.TOKEN_SECRET_KEY);
+        const decoded = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
 
-        console.log('decoded token : ',decoded);
 
-        return res.status(200).json({msg:'token verification successful' , responseStatus:'success' , decode:decoded})
+        return res.status(200).json({ msg: 'token verification successful', responseStatus: 'success', decode: decoded })
 
     } catch (error) {
         console.log('Error while validate the user token', error)
-        return res.status(500).json({ msg: 'Internal server error', responseStatus: 'failed' });
+        return res.status(401).json({ msg: 'Internal server error', responseStatus: 'failed' });
     }
 }
-export { userSignUpController, userLoginController, userTokenValidation }
+
+
+export { userSignUpController, userLoginController, userTokenValidation, getUserDataController }
