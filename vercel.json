@@ -1,28 +1,29 @@
 {
   "version": 2,
-  "framework": null,
-  "buildCommand": "",
-  "outputDirectory": "",
-  "installCommand": "npm install",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60,
-      "memory": 1024
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
     },
-    "api/crons/cleanup.js": {
-      "maxDuration": 60
+    {
+      "src": "api/crons/cleanup.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
+  "routes": [
+    {
+      "src": "/api/crons/cleanup",
+      "dest": "/api/crons/cleanup.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.js"
+    }
+  ],
   "crons": [
     {
       "path": "/api/crons/cleanup",
       "schedule": "0 1 * * *"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
     }
   ],
   "regions": ["iad1"]

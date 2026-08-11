@@ -2,12 +2,11 @@
   "name": "share-backend",
   "version": "2.0.0",
   "description": "share your text, images, files and audio anywhere",
-  "main": "index.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "server": "nodemon index.js",
-    "start": "node index.js",
-    "vercel-build": "echo 'Vercel uses api/ serverless functions'",
+    "server": "nodemon server.js",
+    "start": "node server.js",
     "test": "node --test tests/*.test.js",
     "migrate": "node scripts/migrateLegacy.js",
     "seed:admin": "node -e \"import('./lib/db.js').then(m=>m.default()).then(()=>import('./scripts/seedAdmin.js')).then(s=>s.seedAdminUser()).then(()=>process.exit(0))\""

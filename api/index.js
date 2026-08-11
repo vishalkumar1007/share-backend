@@ -2,7 +2,7 @@ import connectDb from '../lib/db.js';
 import { buildApp } from '../app.js';
 import { seedAdminUser } from '../scripts/seedAdmin.js';
 
-// Full Express app for Vercel. Local still uses index.js + server.listen.
+// Vercel serverless entry. Local uses server.js + listen().
 const app = buildApp();
 
 let bootPromise;
