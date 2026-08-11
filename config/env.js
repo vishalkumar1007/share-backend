@@ -49,7 +49,11 @@ export const env = {
   MAX_UPLOAD_BYTES: Number(get('MAX_UPLOAD_BYTES')),
   RATE_LIMIT_MAX: Number(get('RATE_LIMIT_MAX')),
   RATE_LIMIT_WINDOW_MS: Number(get('RATE_LIMIT_WINDOW_MS')),
-  CORS_ORIGINS: get('CORS_ORIGINS').split(',').map((s) => s.trim()).filter(Boolean),
+  CORS_ORIGINS: get('CORS_ORIGINS')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+
   isProd: process.env.VERCEL === '1' || process.env.NODE_ENV === 'production',
 };
 
