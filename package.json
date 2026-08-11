@@ -33,6 +33,6 @@
     "zod": "^4.4.3"
   },
   "overrides": {
-    "buffer-equal-constant-time": "file:vendor/buffer-equal-constant-time"
+    "jwa": "1.4.2"
   }
 }
