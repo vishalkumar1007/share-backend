@@ -1,0 +1,6 @@
+# Keep local-only / heavy paths out of the serverless bundle noise
+.env
+uploads
+tests
+*.md
+.git

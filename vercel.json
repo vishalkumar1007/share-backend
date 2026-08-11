@@ -1,21 +1,13 @@
 {
   "version": 2,
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": "",
+  "installCommand": "npm install",
   "functions": {
-    "api/uploads.js": {
+    "api/index.js": {
       "maxDuration": 60,
       "memory": 1024
-    },
-    "api/shares/[[...]].js": {
-      "maxDuration": 30
-    },
-    "api/chat/[[...]].js": {
-      "maxDuration": 30
-    },
-    "api/auth/[[...]].js": {
-      "maxDuration": 20
-    },
-    "api/admin/[[...]].js": {
-      "maxDuration": 20
     },
     "api/crons/cleanup.js": {
       "maxDuration": 60
@@ -29,20 +21,8 @@
   ],
   "rewrites": [
     {
-      "source": "/",
+      "source": "/(.*)",
       "destination": "/api"
-    },
-    {
-      "source": "/s/:shareId",
-      "destination": "/api/shares/:shareId"
-    },
-    {
-      "source": "/api/user/:path*",
-      "destination": "/api/legacy/user/:path*"
-    },
-    {
-      "source": "/api/TextMultiverse/:path*",
-      "destination": "/api/legacy/TextMultiverse/:path*"
     }
   ],
   "regions": ["iad1"]

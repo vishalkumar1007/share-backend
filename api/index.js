@@ -1,27 +1,23 @@
-import express from 'express';
 import connectDb from '../lib/db.js';
-import { createDualMountedFunctionApp } from '../lib/app.js';
+import { buildApp } from '../app.js';
+import { seedAdminUser } from '../scripts/seedAdmin.js';
 
-const healthRouter = express.Router();
+// Full Express app for Vercel. Local still uses index.js + server.listen.
+const app = buildApp();
 
-healthRouter.get('/', async (req, res) => {
-  let dbStatus = 'disconnected';
-  try {
-    await connectDb();
-    dbStatus = 'connected';
-  } catch (error) {
-    dbStatus = 'disconnected';
+let bootPromise;
+const ensureBoot = () => {
+  if (!bootPromise) {
+    bootPromise = connectDb()
+      .then(() => seedAdminUser())
+      .catch((error) => {
+        console.error(`[db] failed to connect: ${error?.message}`);
+      });
   }
+  return bootPromise;
+};
 
-  return res.json({
-    note: 'welcome to vishal server',
-    serverStatus: 'Server is live',
-    apiRoutes: '/api',
-    status: 'running',
-    db: dbStatus,
-    version: '2.0',
-    time: new Date().toISOString(),
-  });
-});
-
-export default createDualMountedFunctionApp('/api', healthRouter);
+export default async function handler(req, res) {
+  await ensureBoot();
+  return app(req, res);
+}
