@@ -1,0 +1,7 @@
+{
+  "name": "buffer-equal-constant-time",
+  "version": "1.0.1-patched",
+  "description": "Constant-time comparison of Buffer objects (Node 26 compatible fork)",
+  "main": "index.js",
+  "license": "BSD-3-Clause"
+}

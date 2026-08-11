@@ -1,16 +1,49 @@
 {
   "version": 2,
-  "builds": [
+  "functions": {
+    "api/uploads.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/shares/[[...]].js": {
+      "maxDuration": 30
+    },
+    "api/chat/[[...]].js": {
+      "maxDuration": 30
+    },
+    "api/auth/[[...]].js": {
+      "maxDuration": 20
+    },
+    "api/admin/[[...]].js": {
+      "maxDuration": 20
+    },
+    "api/crons/cleanup.js": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
     {
-      "src": "index.js",
-      "use": "@vercel/node"
+      "path": "/api/crons/cleanup",
+      "schedule": "0 1 * * *"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "methods": ["GET", "POST", "OPTIONS"],
-      "dest": "index.js"
+      "source": "/",
+      "destination": "/api"
+    },
+    {
+      "source": "/s/:shareId",
+      "destination": "/api/shares/:shareId"
+    },
+    {
+      "source": "/api/user/:path*",
+      "destination": "/api/legacy/user/:path*"
+    },
+    {
+      "source": "/api/TextMultiverse/:path*",
+      "destination": "/api/legacy/TextMultiverse/:path*"
     }
-  ]
+  ],
+  "regions": ["iad1"]
 }
